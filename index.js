@@ -7,6 +7,7 @@ const mongoose = require('mongoose')
 const config = require('config-lite')(__dirname)
 
 mongoose.connect(config.mongoDB, { useNewUrlParser: true, useUnifiedTopology: true })
+
 mongoose.promise = global.promise
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error: '))
