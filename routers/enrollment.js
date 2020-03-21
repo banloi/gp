@@ -5,6 +5,6 @@ const enrollmentCtroller = require('../controllers/enrollment')
 router.get('/', enrollmentCtroller.findEnrollemt)
 router.post('/', enrollmentCtroller.createEnrollment)
 router.put('/')
-router.delete('/')
+router.delete('/', enrollmentCtroller.deleteEnrollment)
 
 module.exports = router
