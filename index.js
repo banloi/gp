@@ -13,7 +13,6 @@ const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error: '))
 
 const studentModel = require('./lib/students')
-const activityModel = require('./lib/activities')
 
 // __dirname 表示执行文件所在目录的完整目录名
 /* app.get('/', (req, res) => {
@@ -22,8 +21,20 @@ const activityModel = require('./lib/activities')
 })
  */
 
-require('./routes/students')(app, studentModel)
-require('./routes/activities')(app, activityModel)
+// 活动路由
+const activityRouter = require('./routers/activities')
+app.use('/activity', activityRouter)
+
+// 学生路由
+require('./routers/students')(app, studentModel)
+
+// 报名表路由
+const enrollmentRouter = require('./routers/enrollment')
+app.use('/enrollment', enrollmentRouter)
+
+// 得分路由
+const scoreRouter = require('./routers/score')
+app.use('/score', scoreRouter)
 
 app.listen(3000, () => {
   console.log('Listening 3000')
