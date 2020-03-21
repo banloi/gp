@@ -95,10 +95,25 @@ exports.createEnrollment = (req, res) => {
   Promise.all([findStu(), findAct(), existedEnrollment()]).then(createEnrollment, err => console.log(err))
 }
 
-exports.findEnrollemt = (req, res) => {
+exports.findEnrollment = (req, res) => {
   EnrollmentModel.find(
     req.body,
     null,
+    (err, resu) => {
+      if (err) {
+        console.log(err)
+        res.send(err)
+      } else {
+        console.log(resu)
+        res.send(resu)
+      }
+    }
+  )
+}
+
+exports.deleteEnrollment = (req, res) => {
+  EnrollmentModel.deleteMany(
+    req.body,
     (err, resu) => {
       if (err) {
         console.log(err)
