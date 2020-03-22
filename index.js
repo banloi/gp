@@ -12,8 +12,6 @@ mongoose.promise = global.promise
 const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error: '))
 
-const studentModel = require('./lib/students')
-
 // __dirname 表示执行文件所在目录的完整目录名
 /* app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, './1.html'))
@@ -26,7 +24,8 @@ const activityRouter = require('./routers/activities')
 app.use('/activity', activityRouter)
 
 // 学生路由
-require('./routers/students')(app, studentModel)
+const studentRouter = require('./routers/students')
+app.use('student', studentRouter)
 
 // 报名表路由
 const enrollmentRouter = require('./routers/enrollment')
