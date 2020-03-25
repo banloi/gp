@@ -19,6 +19,14 @@ db.on('error', console.error.bind(console, 'MongoDB connection error: '))
 })
  */
 
+// 用户注册路由
+const userRouter = require('./routers/user')
+app.use('/user', userRouter)
+
+// 管理员路由
+const admRouter = require('./routers/adm')
+app.use('/adm', admRouter)
+
 // 活动路由
 const activityRouter = require('./routers/activities')
 app.use('/activity', activityRouter)
