@@ -1,7 +1,7 @@
 module.exports = {
   port: 3000,
   session: {
-    secrect: 'gp',
+    secret: 'gp',
     key: 'graduation',
     maxAge: 2592000000
   },
