@@ -5,10 +5,11 @@ const ActivityModel = require('../lib/activities')
 exports.createEnrollment = (req, res) => {
   console.log(req.body)
   // const existed = this.existedEnrollment(req.body)
+  let studentId = ''
   function findStu () {
     console.log('调用findStu')
     return new Promise((resolve, reject) => {
-      StudentModel.find(
+      StudentModel.findOne(
         { number: req.body.studentNumber },
         null,
         (err, resu) => {
@@ -19,9 +20,12 @@ exports.createEnrollment = (req, res) => {
           if (resu.length === 0) {
             console.log('不存在该学生')
             reject(new Error('不存在该学生'))
+          } else {
+            console.log('找到学生')
+            console.log(resu)
+            studentId = resu._id
+            resolve()
           }
-          console.log('找到学生')
-          resolve()
         }
       )
     })
@@ -73,9 +77,13 @@ exports.createEnrollment = (req, res) => {
   }
 
   function createEnrollment () {
+    const item = req.body
+    item.studentInfo = studentId
+    item.activityInfo = req.body.activityId
+    console.log(item)
     return new Promise((resolve, reject) => {
       EnrollmentModel.create(
-        req.body,
+        item,
         (err, resu) => {
           if (err) {
             console.log(err)
