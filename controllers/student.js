@@ -2,22 +2,28 @@ const StudentModel = require('../lib/students')
 
 exports.createStudent = (req, res) => {
   console.log(req.body)
-  console.log(req.query)
-  const student = {
-    name: req.query.name,
-    number: req.query.number,
-    class: req.query.class,
-    grade: req.query.grade,
-    school: req.query.school
-  }
-  StudentModel.create(student, function (err, student) {
-    if (err) {
-      res.send('cannot create a student' + err)
-      console.log('create a new student error')
-      return
-    }
-    res.send(student)
-  })
+  console.log(req.session.name)
+  StudentModel.create(
+    req.body,
+    function (err, student) {
+      if (err) {
+        if (err.message.match('duplicate key')) {
+          req.flash('error', '用户名已被占用')
+          return res.redirect('/signup')
+        }
+        next(err)
+      }
+      res
+        .cookie(
+          'hahah', 'asda',
+          {
+            maxAge: 10 * 1000, path: '/', httpOnly: true
+          }
+        )
+        .send(student)
+      req.session.user = student
+      req.flash('success', '注册成功')
+    })
 }
 
 exports.findStudent = (req, res) => {
@@ -67,4 +73,10 @@ exports.modifyStudent = (req, res) => {
       }
       console.log(docs)
     })
+}
+const path = require('path')
+exports.god = (req, res) => {
+  res
+    .cookie('rememberme', '1', { expires: new Date(Date.now() + 900000), httpOnly: true })
+    .sendFile(path.join(__dirname, '../views/1.html'))
 }

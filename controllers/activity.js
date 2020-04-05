@@ -1,6 +1,7 @@
 const { body, validationResult } = require('express-validator/check')
 const ActivityModel = require('../lib/activities')
 
+// 添加验证
 exports.actCreatePost = [
   body('name', 'Activity name required').isLength({ min: 1, max: 20 }).trim(),
   body('location', 'location is required'),
