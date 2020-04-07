@@ -52,6 +52,7 @@ exports.actQueryGet = (req, res) => {
 
 exports.actDelete = (req, res) => {
   const query = req.body
+  console.log('daue')
   console.log(query)
   ActivityModel.deleteOne(
     query,
