@@ -13,5 +13,13 @@ module.exports = {
       return res.redirect('back')// 返回之前的页面
     }
     next()
+  },
+
+  checkAdmLogin: function checkAdmLogin (req, res, next) {
+    if (req.session.name === undefined || req.session.name === '') {
+      res.status(400).json({ Error: '请先登录' })
+      return
+    }
+    next()
   }
 }
