@@ -5,6 +5,7 @@ const ActivityModel = require('../lib/activities')
 exports.createEnrollment = (req, res) => {
   console.log(req.body)
   const number = req.session.number
+  const activityId = req.body.activityId
   // const existed = this.existedEnrollment(req.body)
   let studentId = ''
   let enrollId = ''
@@ -37,7 +38,7 @@ exports.createEnrollment = (req, res) => {
     console.log('调用findAct')
     return new Promise((resolve, reject) => {
       ActivityModel.find(
-        { _id: req.body.activityId },
+        { _id: activityId },
         null,
         (err, resu) => {
           if (err) {
@@ -59,7 +60,10 @@ exports.createEnrollment = (req, res) => {
   function existedEnrollment () {
     return new Promise((resolve, reject) => {
       EnrollmentModel.findOne(
-        req.body,
+        {
+          studentNumber: number,
+          activityId: activityId
+        },
         null,
         (err, resu) => {
           if (err) {
@@ -102,6 +106,25 @@ exports.createEnrollment = (req, res) => {
       )
     })
   }
+
+  function addEnroNum () {
+    ActivityModel.updateOne(
+      { _id: activityId },
+      {
+        $inc: {
+          enroNum: 1
+        }
+      },
+      (err, resu) => {
+        if (err) {
+          console.log(err)
+        } else {
+          console.log(resu)
+        }
+      }
+    )
+  }
+
   /*   this.existedEnrollment(req.body)
     .then(createEnrollment)
     .catch(err => console.log(err)) */
@@ -110,38 +133,78 @@ exports.createEnrollment = (req, res) => {
     .then(createEnrollment, err => {
       res.status(400).json({ Error: err.message, enrollId: enrollId })
     })
+    .then(addEnroNum)
+    .catch(e => {
+      console.log(e)
+    })
 }
 
 exports.findEnrollment = (req, res) => {
+  console.log(req.query)
+  const id = req.query.activityId
   EnrollmentModel.find(
-    req.body,
-    null,
-    (err, resu) => {
+    { activityId: id },
+    'studentInfo'
+  )
+    .populate({ path: 'studentInfo', model: StudentModel })
+    .exec((err, resu) => {
       if (err) {
         console.log(err)
         res.send(err)
       } else {
         console.log(resu)
-        res.json({ message: '取消成功' })
+        res.send(resu)
       }
-    }
-  )
+    })
 }
 
 // 取消报名
 exports.deleteEnrollment = (req, res) => {
   const enrollId = req.body._id
+  const activityId = req.body.activityId
   console.log(enrollId)
-  EnrollmentModel.deleteOne(
-    { _id: enrollId },
-    (err, resu) => {
-      if (err) {
-        console.log(err.message)
-        res.send(err)
-      } else {
-        console.log(resu)
-        res.send(resu)
+
+  function addEnroNum () {
+    console.log('nidaye')
+    ActivityModel.updateOne(
+      { _id: activityId },
+      {
+        $inc: {
+          enroNum: -1
+        }
+      },
+      (err, resu) => {
+        if (err) {
+          console.log(err)
+        } else {
+          console.log(resu)
+        }
       }
-    }
-  )
+    )
+  }
+
+  function deleteEnro () {
+    return new Promise((resolve, reject) => {
+      EnrollmentModel.deleteOne(
+        { _id: enrollId },
+        (err, resu) => {
+          if (err) {
+            console.log(err.message)
+            reject(err)
+            res.send(err)
+          } else {
+            console.log(resu)
+            resolve()
+            res.send(resu)
+          }
+        }
+      )
+    })
+  }
+
+  deleteEnro()
+    .then(addEnroNum)
+    .catch(e => {
+      console.log(e)
+    })
 }
