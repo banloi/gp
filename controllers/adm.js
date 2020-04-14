@@ -40,7 +40,7 @@ exports.admLogin = (req, res) => {
   }
 
   function rejected (err) {
-    req.session.number = ''
+    req.session.name = ''
     res.status(400).json({ Error: err.message })
   }
 

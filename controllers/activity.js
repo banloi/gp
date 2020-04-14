@@ -9,7 +9,7 @@ exports.actCreatePost = [
   body('detail', 'detail is required'),
   body('startTime', ' startTime is required'),
   body('endTime', 'EndTime is required'),
-  body('constitutor', 'constitutor is required'),
+  body('enroDeadLine', 'enroDeadLine is required'),
   body('module', 'module is required'),
   (req, res) => {
     const error = validationResult(req)
@@ -23,6 +23,7 @@ exports.actCreatePost = [
     const endTime = new Date(req.body.endTime)
     req.body.startTime = startTime
     req.body.endTime = endTime
+    req.body.constitutor = req.session.name
     console.log(req.body.startTime)
     console.log(startTime instanceof Date)
     console.log(startTime.getTimezoneOffset())
@@ -31,7 +32,7 @@ exports.actCreatePost = [
         console.log(err)
         res.send(err)
       }
-      if (!err) res.send('创建活动成功')
+      if (!err) res.json({ message: '活动创建成功' })
     })
   }
 ]
@@ -40,7 +41,7 @@ exports.actQueryGet = (req, res) => {
   const query = req.body
   console.log(query)
   ActivityModel.find(
-    query,
+    { enroDeadLine: { $gte: Date.now() } },
     null,
     (err, resu) => {
       if (err) console.log(err)
@@ -69,6 +70,26 @@ exports.actDelete = (req, res) => {
       if (resu.ok === 1 && resu.deletedCount === 1) {
         console.log(resu)
         res.send('删除成功')
+      }
+    }
+  )
+}
+
+exports.getEnroAct = (req, res) => {
+  const constitutor = req.session.name
+  console.log(constitutor)
+  ActivityModel.find(
+    {
+      constitutor: constitutor,
+      enroDeadLine: { $gte: Date.now() }
+    },
+    null,
+    (err, resu) => {
+      res.send(resu)
+      if (err) {
+        console.log(err)
+      } else {
+        console.log(resu)
       }
     }
   )
