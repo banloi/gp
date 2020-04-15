@@ -11,5 +11,6 @@ router.put('/', (req, res) => {})
 router.delete('/', actCtrller.actDelete)
 
 router.get('/enrolling', check.checkAdmLogin, actCtrller.getEnroAct)
+router.get('/underway', check.checkAdmLogin, actCtrller.getUnderway)
 
 module.exports = router

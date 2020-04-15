@@ -94,3 +94,25 @@ exports.getEnroAct = (req, res) => {
     }
   )
 }
+
+exports.getUnderway = (req, res) => {
+  const constitutor = req.session.name
+  console.log(constitutor)
+  ActivityModel.find(
+    {
+      constitutor: constitutor,
+      startTime: { $lt: Date.now() },
+      endTime: { $gte: Date.now() }
+
+    },
+    null,
+    (err, resu) => {
+      res.send(resu)
+      if (err) {
+        console.log(err)
+      } else {
+        console.log(resu)
+      }
+    }
+  )
+}
