@@ -5,6 +5,7 @@ const check = require('../controllers/check')
 
 router.get('/', enrollmentCtroller.findEnrollment)
 router.post('/', check.checkLogin, enrollmentCtroller.createEnrollment)
+router.post('/adm', check.checkAdmLogin, enrollmentCtroller.createEnrollment)
 router.put('/')
 router.post('/cancel', /*  check.checkLogin, */ enrollmentCtroller.deleteEnrollment)
 
