@@ -1,14 +1,78 @@
-const ScoreModle = require('../lib/score')
-// const StudentModel = require('../lib/students')
+const ScoreModel = require('../lib/score')
+const StudentModel = require('../lib/students')
 // const ActivityModel = require('../lib/activities')
 const EnrollmentModel = require('../lib/enrollment')
 
+exports.getRateList = (req, res) => {
+  const activityId = req.query.activityId
+  const list = {}
+  function getUnrated () {
+    return new Promise((resolve, reject) => {
+      EnrollmentModel.find(
+        { activityId },
+        'studentInfo'
+      )
+        .populate({ path: 'studentInfo', model: StudentModel })
+        .exec(
+          (err, resu) => {
+            if (err) {
+              console.log(err)
+              reject(err)
+            } else {
+              console.log(resu)
+              list.unRated = resu
+              resolve()
+            }
+          })
+    })
+  }
+  function getRated () {
+    return new Promise((resolve, reject) => {
+      ScoreModel.find(
+        { activityId },
+        'studentInfo score performance'
+      )
+        .populate({ path: 'studentInfo', model: StudentModel })
+        .exec(
+          (err, resu) => {
+            if (err) {
+              console.log(err)
+              reject(err)
+            } else {
+              console.log(resu)
+              list.rated = resu
+              resolve()
+            }
+          })
+    })
+  }
+  function send () {
+    res.send(list)
+  }
+
+  getUnrated()
+    .then(getRated)
+    .then(send)
+    .catch(err => {
+      console.log(err)
+      res.send(err).status(400)
+    })
+}
+
 exports.createScore = (req, res) => {
+  const { studentNumber, activityId, studentId } = req.body
+  const { performance, score } = req.body
+  console.log('ppp')
+  console.log(studentId)
+
   function findScore () {
     console.log('调用findScore')
     return new Promise((resolve, reject) => {
-      ScoreModle.find(
-        { studentNumber: req.body.studentNumber, activityId: req.body.activityId },
+      ScoreModel.find(
+        {
+          studentNumber: studentNumber,
+          activityId: activityId
+        },
         null,
         (err, resu) => {
           if (err) {
@@ -24,8 +88,6 @@ exports.createScore = (req, res) => {
       )
     })
   }
-
-  const { studentNumber, activityId } = req.body
 
   function existedEnrollment () {
     return new Promise((resolve, reject) => {
@@ -53,8 +115,15 @@ exports.createScore = (req, res) => {
   function createScore () {
     return new Promise((resolve, reject) => {
       console.log('use createScore')
-      ScoreModle.create(
-        req.body,
+      ScoreModel.create(
+        {
+          studentNumber: studentNumber,
+          activityId: activityId,
+          performance: performance,
+          score: score,
+          activityInfo: activityId,
+          studentInfo: studentId
+        },
         (err, resu) => {
           if (err) {
             console.log(err)
@@ -64,7 +133,6 @@ exports.createScore = (req, res) => {
             console.log('created')
             console.log(resu)
             resolve()
-            res.send(resu)
           }
         }
       )
@@ -86,22 +154,24 @@ exports.createScore = (req, res) => {
       )
   }
 
-  /*   existedEnrollment
-    .then(createScore)
-    .catch(err => console.log(err)) */
-
   Promise.all([findScore(), existedEnrollment()])
     .then(createScore)
     .then(removeEnrollment)
+    .then(
+      () => {
+        res.json({ message: '打分成功' })
+      }
+    )
     .catch(err => {
       console.log(err)
+      res.err(err)
     })
   console.log('-----------------------------------------------')
 }
 
 exports.getScore = (req, res) => {
   console.log(req.body)
-  ScoreModle.find(
+  ScoreModel.find(
     req.query,
     null,
     (err, resu) => {
