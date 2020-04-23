@@ -1,5 +1,6 @@
 const { body, validationResult } = require('express-validator/check')
 const ActivityModel = require('../lib/activities')
+const EnrollmentModel = require('../lib/enrollment')
 
 // 添加验证
 exports.actCreatePost = [
@@ -115,4 +116,81 @@ exports.getUnderway = (req, res) => {
       }
     }
   )
+}
+
+exports.getUnrated = (req, res) => {
+  const constitutor = req.session.name
+  ActivityModel.find(
+    {
+      constitutor: constitutor,
+      endTime: { $lt: Date.now() },
+      state: 'underway'
+    },
+    null,
+    (err, resu) => {
+      if (err) {
+        console.log(err)
+      } else {
+        console.log(resu)
+        res.send(resu)
+      }
+    }
+  )
+}
+
+exports.complete = (req, res) => {
+  const activityId = req.body.activityId
+  console.log(activityId)
+
+  function findEnro () {
+    return new Promise((resolve, reject) => {
+      EnrollmentModel.find(
+        {
+          activityId: activityId
+        },
+        null,
+        (err, resu) => {
+          if (err) {
+            console.log(err)
+            reject(err)
+          } else {
+            if (resu.length > 0) {
+              console.log('打分未完成')
+              res.json({ message: '打分未完成，发布失败' })
+              reject(new Error('打分未完成，发布失败'))
+            } else if (resu.length === 0) {
+              console.log('keyifabu')
+              resolve()
+            }
+          }
+        }
+      )
+    })
+  }
+
+  function setComplete () {
+    return new Promise((resolve, reject) => {
+      ActivityModel.updateOne(
+        { _id: activityId },
+        {
+          $set: { state: 'done' }
+        },
+        (err, resu) => {
+          if (err) {
+            reject(err)
+          } else {
+            console.log(resu)
+            res.json({ message: '发布成功' })
+            resolve()
+          }
+        }
+      )
+    })
+  }
+
+  findEnro()
+    .then(setComplete)
+    .catch(err => {
+      console.log(err)
+    })
 }
