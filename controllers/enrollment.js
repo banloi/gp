@@ -4,11 +4,16 @@ const ActivityModel = require('../lib/activities')
 
 exports.createEnrollment = (req, res) => {
   console.log(req.body)
-  const number = req.session.number
+  console.log(req.body.number)
+  let number = req.session.number
+  if (req.body.number) {
+    number = req.body.number
+  }
   const activityId = req.body.activityId
   // const existed = this.existedEnrollment(req.body)
   let studentId = ''
   let enrollId = ''
+
   function findStu () {
     console.log('调用findStu')
     return new Promise((resolve, reject) => {
@@ -26,6 +31,14 @@ exports.createEnrollment = (req, res) => {
           } else {
             console.log('找到学生')
             console.log(resu)
+            if (req.body.name) {
+              if (resu.name !== req.body.name) {
+                console.log('学号和姓名不匹配')
+                reject(new Error('学号和姓名不匹配'))
+              } else {
+                console.log('pipa')
+              }
+            }
             studentId = resu._id // 获取学号相关的 _id
             resolve()
           }
@@ -37,7 +50,7 @@ exports.createEnrollment = (req, res) => {
   function findAct () {
     console.log('调用findAct')
     return new Promise((resolve, reject) => {
-      ActivityModel.find(
+      ActivityModel.findOne(
         { _id: activityId },
         null,
         (err, resu) => {
@@ -45,12 +58,16 @@ exports.createEnrollment = (req, res) => {
             console.log(err)
             reject(err)
           } else {
-            if (resu.length === 0) {
+            if (resu === null) {
               console.log('不存在该活动')
               reject(new Error('不存在该活动'))
+            } else if (resu.enroNum >= resu.limiteOfStu) {
+              console.log('人数超限')
+              reject(new Error('人数超限'))
+            } else {
+              console.log('findAct')
+              resolve(resu)
             }
-            console.log('findAct')
-            resolve(resu)
           }
         }
       )
@@ -86,9 +103,9 @@ exports.createEnrollment = (req, res) => {
   function createEnrollment () {
     const item = {}
     item.studentInfo = studentId
-    item.activityInfo = req.body.activityId
-    item.studentNumber = req.session.number
-    item.activityId = req.body.activityId
+    item.activityInfo = activityId
+    item.studentNumber = number
+    item.activityId = activityId
     return new Promise((resolve, reject) => {
       EnrollmentModel.create(
         item,
@@ -104,25 +121,22 @@ exports.createEnrollment = (req, res) => {
           }
         }
       )
+      ActivityModel.updateOne(
+        { _id: activityId },
+        {
+          $inc: {
+            enroNum: 1
+          }
+        },
+        (err, resu) => {
+          if (err) {
+            console.log(err)
+          } else {
+            console.log(resu)
+          }
+        }
+      )
     })
-  }
-
-  function addEnroNum () {
-    ActivityModel.updateOne(
-      { _id: activityId },
-      {
-        $inc: {
-          enroNum: 1
-        }
-      },
-      (err, resu) => {
-        if (err) {
-          console.log(err)
-        } else {
-          console.log(resu)
-        }
-      }
-    )
   }
 
   /*   this.existedEnrollment(req.body)
@@ -133,7 +147,7 @@ exports.createEnrollment = (req, res) => {
     .then(createEnrollment, err => {
       res.status(400).json({ Error: err.message, enrollId: enrollId })
     })
-    .then(addEnroNum)
+  /*     .then(addEnroNum) */
     .catch(e => {
       console.log(e)
     })
@@ -163,7 +177,7 @@ exports.deleteEnrollment = (req, res) => {
   const enrollId = req.body._id
   const activityId = req.body.activityId
   console.log(enrollId)
-
+  console.log(activityId)
   function addEnroNum () {
     console.log('nidaye')
     ActivityModel.updateOne(
