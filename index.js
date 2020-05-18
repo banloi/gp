@@ -15,7 +15,7 @@ const db = mongoose.connection
 db.on('error', console.error.bind(console, 'MongoDB connection error: '))
 
 // 跨域问题
-app.all('*', function (req, res, next) {
+/* app.all('*', function (req, res, next) {
   res.header('Access-Control-Allow-Origin', 'http://localhost:3001')
   res.header('Access-Control-Allow-Headers', 'X-Requested-With, Authorization, Accept')
   res.header('Access-Control-Allow-Methods', 'PUT,POST,GET,DELETE,OPTIONS')
@@ -23,12 +23,32 @@ app.all('*', function (req, res, next) {
   res.header('Access-Control-Allow-Credentials', 'true')
   res.header('Content-Type', 'application/json;charset=utf-8')
   next()
+}) */
+
+app.all('*', function (req, res, next) {
+  const ol = config.url.cors.split(', ')
+  if (ol.indexOf(req.headers.origin) >= 0) {
+    res.header('Access-Control-Allow-Origin', req.headers.origin)
+    res.header('Access-Control-Allow-Headers', 'X-Requested-With,Content-Type,authorization')
+    res.header('Access-Control-Allow-Credentials', 'true')
+    res.header('Access-Control-Allow-Methods', 'PUT,POST,GET,DELETE,OPTIONS')
+    res.header('X-Powered-By', ' Express 4.17.1')
+    res.header('Content-Type', 'application/json;charset=utf-8')
+  }
+
+  next()
 })
 
 app.use(cookieParse())
 
+/* app.use(expressJwt({
+  secret: 'secret12345' // 签名的密钥 或 PublicKey
+}).unless({
+  path: ['/user/login', '/signup'] // 指定路径不经过 Token 解析
+})) */
+
 // 设置 session
-const session = require('express-session')
+/* const session = require('express-session')
 const MongoStore = require('connect-mongo')(session)
 app.use(session({
   name: config.session.key, // 设置 coolie 中，保存 session 的字段名称，默认为 connect.sid
@@ -41,7 +61,7 @@ app.use(session({
   store: new MongoStore({ // session 的存储方式
     url: config.mongoDB
   })
-}))
+})) */
 
 // connect-flash: 基于 session 实现的用于通知功能的中间件，需结合 express-session 使用
 app.use(flash())
