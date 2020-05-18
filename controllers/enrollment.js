@@ -5,7 +5,7 @@ const ActivityModel = require('../lib/activities')
 exports.createEnrollment = (req, res) => {
   console.log(req.body)
   console.log(req.body.number)
-  let number = req.session.number
+  let number = req.jwtInfo.number
   if (req.body.number) {
     number = req.body.number
   }
@@ -13,6 +13,7 @@ exports.createEnrollment = (req, res) => {
   // const existed = this.existedEnrollment(req.body)
   let studentId = ''
   let enrollId = ''
+  const info = {}
 
   function findStu () {
     console.log('调用findStu')
@@ -40,6 +41,10 @@ exports.createEnrollment = (req, res) => {
               }
             }
             studentId = resu._id // 获取学号相关的 _id
+            info.name = resu.name
+            info.class = resu.class
+            info.school = resu.school
+            info.number = resu.number
             resolve()
           }
         }
@@ -116,7 +121,7 @@ exports.createEnrollment = (req, res) => {
           } else {
             console.log('报名成功')
             console.log(resu)
-            res.status(200).json({ message: '报名成功', enrollId: resu._id })
+            res.status(200).json({ message: '报名成功', enrollId: resu._id, ...info })
             resolve()
           }
         }
@@ -176,8 +181,7 @@ exports.findEnrollment = (req, res) => {
 exports.deleteEnrollment = (req, res) => {
   const enrollId = req.body._id
   const activityId = req.body.activityId
-  console.log(enrollId)
-  console.log(activityId)
+  console.log(enrollId, activityId)
   function addEnroNum () {
     console.log('nidaye')
     ActivityModel.updateOne(
@@ -206,10 +210,14 @@ exports.deleteEnrollment = (req, res) => {
             console.log(err.message)
             reject(err)
             res.send(err)
-          } else {
+          } else if (resu.deletedCount === 1) {
             console.log(resu)
             resolve()
             res.send(resu)
+          } else {
+            console.log(resu)
+            reject(new Error('取消失败'))
+            res.status(400).json({ Error: '取消失败' })
           }
         }
       )

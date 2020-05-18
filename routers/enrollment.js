@@ -3,7 +3,7 @@ const router = express.Router()
 const enrollmentCtroller = require('../controllers/enrollment')
 const check = require('../controllers/check')
 
-router.get('/', enrollmentCtroller.findEnrollment)
+router.get('/', check.checkAdmLogin, enrollmentCtroller.findEnrollment)
 router.post('/', check.checkLogin, enrollmentCtroller.createEnrollment)
 router.post('/adm', check.checkAdmLogin, enrollmentCtroller.createEnrollment)
 router.put('/')

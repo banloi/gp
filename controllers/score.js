@@ -185,6 +185,25 @@ exports.getScore = (req, res) => {
   )
 }
 
+exports.getAdmScore = (req, res) => {
+  const activityId = req.query
+  console.log(activityId)
+  ScoreModel.find(
+    activityId,
+    'studentInfo score performance'
+  )
+    .populate({ path: 'studentInfo', model: StudentModel })
+    .exec((err, resu) => {
+      if (err) {
+        console.log(err)
+        res.send(err)
+      } else {
+        console.log(resu)
+        res.send(resu)
+      }
+    })
+}
+
 /* function findStu() {
   console.log('调用findStu')
   return new Promise((resolve, reject) => {

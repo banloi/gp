@@ -8,10 +8,13 @@ router.get('/', check.checkLogin, actCtrller.actQueryGet)
 router.post('/', check.checkAdmLogin, actCtrller.actCreatePost)
 // PUT 请求方法使用请求中的负载创建替换目标资源，幂等，一次或多次连续调用是等价的，无副作用（改）
 router.put('/complete', check.checkAdmLogin, actCtrller.complete)
-router.delete('/', actCtrller.actDelete)
+router.delete('/', check.checkAdmLogin, actCtrller.actDelete)
 
 router.get('/enrolling', check.checkAdmLogin, actCtrller.getEnroAct)
 router.get('/underway', check.checkAdmLogin, actCtrller.getUnderway)
 router.get('/unrated', check.checkAdmLogin, actCtrller.getUnrated)
+router.get('/done', check.checkAdmLogin, actCtrller.getDone)
 
+router.get('/info', check.checkAdmLogin, actCtrller.getActivityInfo)
+router.put('/info', check.checkAdmLogin, actCtrller.putActivityInfo)
 module.exports = router

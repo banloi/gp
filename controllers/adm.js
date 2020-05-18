@@ -1,4 +1,5 @@
 const AdmModel = require('../lib/adm')
+const check = require('./check')
 
 exports.admLogin = (req, res) => {
   let type = ''
@@ -35,18 +36,20 @@ exports.admLogin = (req, res) => {
   }
 
   function authed () {
-    req.session.name = name
-    res.status(200).json({ message: '登录成功', type: type })
+    const token = check.jwtSign({
+      name: name
+    })
+    console.log(token)
+    res.status(200).json({ message: '登录成功', type: type, token: token })
   }
 
   function rejected (err) {
-    req.session.name = ''
-    res.status(400).json({ Error: err.message })
+    res.status(401).json({ Error: err.message })
   }
 
   console.log('hahah')
-  const { name, password } = req.body
-
+  const { password } = req.body
+  const name = req.body.username
   findAdm(name, password)
     .then(authed, (err) => { rejected(err) })
     .catch(e => console.log(e.message))

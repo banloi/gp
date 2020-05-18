@@ -2,7 +2,6 @@ const StudentModel = require('../lib/students')
 
 exports.createStudent = (req, res) => {
   console.log(req.body)
-  console.log(req.session.name)
   StudentModel.create(
     req.body,
     function (err, student) {
@@ -14,15 +13,7 @@ exports.createStudent = (req, res) => {
         next(err)
       }
       res
-        .cookie(
-          'hahah', 'asda',
-          {
-            maxAge: 10 * 1000, path: '/', httpOnly: true
-          }
-        )
         .send(student)
-      req.session.user = student
-      req.flash('success', '注册成功')
     })
 }
 

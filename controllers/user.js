@@ -3,16 +3,16 @@ const StudentModel = require('../lib/students')
 const EnrollmentModel = require('../lib/enrollment')
 const ScoreModel = require('../lib/score')
 const ActivityModel = require('../lib/activities')
+const check = require('./check')
 
 exports.userRegister = (req, res) => {
   let studentInfo = ''
-  console.log('nidaye', req.session.number)
   const number = req.body.number
   function findStu () {
     console.log('调用findStu')
     return new Promise((resolve, reject) => {
       StudentModel.findOne(
-        { number: req.body.number },
+        { number: number },
         null,
         (err, resu) => {
           if (err) {
@@ -37,7 +37,7 @@ exports.userRegister = (req, res) => {
     console.log('调用findUser')
     return new Promise((resolve, reject) => {
       UserModel.find(
-        { number: req.body.number },
+        { number: number },
         null,
         (err, resu) => {
           if (err) {
@@ -82,22 +82,21 @@ exports.userRegister = (req, res) => {
     })
   }
   function successRes () {
-    res.status(201)
-      .json({ number: number })
+    const token = check.jwtSign({ number: number })
+    res.status(201).json({ message: '注册成功', type: 'user', token: token })
   }
   findStu()
     .then(findUser)
     .then(createUser)
     .then(successRes, e => {
-      req.session.number = req.body.number // 设置 session
+      // req.session.number = req.body.number // 设置 session
       console.log(e.message)
-      res.status(200)
+      res.status(400)
         .json({ Error: e.message })
     })
     .catch(e => console.log(e))
   // Promise.all([findStu(), findUser()]).then(createUser, err => console.log(err))
   console.log(req.body)
-  console.log(req.session)
 }
 
 exports.userLogin = (req, res) => {
@@ -137,27 +136,120 @@ exports.userLogin = (req, res) => {
   }
 
   function authed () {
-    req.session.number = number
-    res.status(200).json({ message: '登录成功', studentInfo: studentInfo, type: 'user' })
+    const token = check.jwtSign({
+      number: number
+    })
+    console.log(token)
+    res.status(200).json({ message: '登录成功', studentInfo: studentInfo, type: 'user', token: token })
   }
 
   function rejected (err) {
-    req.session.number = ''
-    res.status(400).json({ Error: err.message })
+    res.status(401).json({ Error: err.message })
   }
 
   console.log('hahah')
-  const { number, password } = req.body
+  const { password } = req.body
+  const number = req.body.username
+  console.log(req.body)
 
   findUser(number, password)
     .then(authed, (err) => { rejected(err) })
     .catch(e => console.log(e.message))
 }
 
+exports.getEnrolledActivities = (req, res) => {
+  let list
+  const number = req.jwtInfo.number
+  function findEnro () {
+    return new Promise((resolve, reject) => {
+      EnrollmentModel.find(
+        { studentNumber: number },
+        '_id'
+      )
+        // .populate({ path: 'studentInfo', model: StudentModel })
+        .populate({ path: 'activityInfo', model: ActivityModel })
+        .exec((err, resu) => {
+          if (err) {
+            console.log(err)
+            reject(err)
+          } else {
+            list = resu // 获取已经报名的活动
+            console.log(resu)
+            resolve(resu)
+          }
+        })
+    })
+  }
+  function cl () {
+    console.log(list)
+    res.status(200) // 返回活动列表
+      .json(list)
+  }
+  console.log('已报名')
+  console.log(list)
+  findEnro()
+    .then(cl)
+    .catch(e => { console.log(e) })
+}
+
+exports.getDoneActivities = (req, res) => {
+  let list
+
+  const number = req.jwtInfo.number
+  console.log(number)
+  function findScore () {
+    return new Promise((resolve, reject) => {
+      ScoreModel.find(
+        { studentNumber: number },
+        null
+      )
+        .populate({ path: 'activityInfo', model: ActivityModel })
+        .exec((err, resu) => {
+          if (err) {
+            console.log(err)
+            reject(err)
+          } else {
+            list = resu // 获取已打分活动
+            resolve(resu)
+          }
+        })
+    })
+  }
+
+  function cl () {
+    res.status(200) // 返回活动列表
+      .json(list)
+  }
+  console.log('完成')
+
+  findScore()
+    .then(cl)
+    .catch(e => { console.log(e) })
+}
+
 exports.getUserInfo = (req, res) => {
-  const number = req.session.number
+  const number = req.jwtInfo.number
   const list = {}
   // 查找已报名的项目
+
+  function getScore () {
+    return new Promise((resolve, reject) => {
+      ScoreModel.find(
+        { studentNumber: number },
+        'score performance'
+      )
+        .populate({ path: 'activityInfo', model: ActivityModel })
+        .exec((err, resu) => {
+          if (err) {
+            console.log(err)
+            reject(err)
+          } else {
+            list.score = resu // 获取已打分活动
+            resolve(resu)
+          }
+        })
+    })
+  }
 
   function getTel () {
     return new Promise((resolve, reject) => {
@@ -187,64 +279,23 @@ exports.getUserInfo = (req, res) => {
             console.log(err)
             reject(err)
           } else {
-            list.studentInfo = resu
+            list.info = resu
             resolve()
           }
         }
       )
     })
   }
-  function findEnro () {
-    return new Promise((resolve, reject) => {
-      EnrollmentModel.find(
-        { studentNumber: number },
-        '_id'
-      )
-        // .populate({ path: 'studentInfo', model: StudentModel })
-        .populate({ path: 'activityInfo', model: ActivityModel })
-        .exec((err, resu) => {
-          if (err) {
-            console.log(err)
-            reject(err)
-          } else {
-            list.enro = resu // 获取已经报名的活动
-            resolve(resu)
-          }
-        })
-    })
-  }
-  // 查找已打分的项目
-  function findScore () {
-    return new Promise((resolve, reject) => {
-      ScoreModel.find(
-        { studentNumber: number },
-        null
-      )
-        .populate({ path: 'activityInfo', model: ActivityModel })
-        .exec((err, resu) => {
-          if (err) {
-            console.log(err)
-            reject(err)
-          } else {
-            list.score = resu // 获取已打分活动
-            resolve(resu)
-          }
-        })
-    })
-  }
 
   function cl () {
-    console.log(list.studentInfo)
-    console.log(list.studentInfo.telephone)
     res.status(200) // 返回活动列表
       .json(list)
   }
 
   getStudentInfo()
+    .then(getScore)
     .then(getTel)
-    .then(findEnro)
-    .then(findScore)
     .then(cl)
     .catch(e => { console.log(e) })
-  console.log(req.session.number)
+  console.log(req.jwtInfo.number)
 }
