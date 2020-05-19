@@ -227,7 +227,7 @@ exports.complete = (req, res) => {
           } else {
             if (resu.length > 0) {
               console.log('打分未完成')
-              res.json({ message: '打分未完成，发布失败' })
+              res.status(400).json({ Error: '打分未完成，发布失败' })
               reject(new Error('打分未完成，发布失败'))
             } else if (resu.length === 0) {
               console.log('keyifabu')

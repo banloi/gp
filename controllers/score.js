@@ -64,7 +64,7 @@ exports.createScore = (req, res) => {
   const { performance, score } = req.body
   console.log('ppp')
   console.log(studentId)
-
+  let scoreId = ''
   function findScore () {
     console.log('调用findScore')
     return new Promise((resolve, reject) => {
@@ -82,6 +82,9 @@ exports.createScore = (req, res) => {
             resolve()
           } else if (resu.length > 0) {
             console.log('已打分')
+            console.log(resu)
+            console.log('id,', resu[0]._id)
+            scoreId = resu[0]._id
             reject(new Error('已打分'))
           }
         }
@@ -128,10 +131,10 @@ exports.createScore = (req, res) => {
           if (err) {
             console.log(err)
             reject(err)
-            res.send(err)
           } else {
             console.log('created')
             console.log(resu)
+            scoreId = resu.id
             resolve()
           }
         }
@@ -159,14 +162,34 @@ exports.createScore = (req, res) => {
     .then(removeEnrollment)
     .then(
       () => {
-        res.json({ message: '打分成功' })
+        res.json({ message: '打分成功', scoreId: scoreId })
       }
     )
     .catch(err => {
       console.log(err)
-      res.err(err)
+      res.status(400).json({ message: err, scoreId: scoreId })
     })
   console.log('-----------------------------------------------')
+}
+
+exports.putScore = (req, res) => {
+  const { scoreId, ...info } = req.body
+  console.log(info)
+  ScoreModel.updateOne(
+    {
+      _id: scoreId
+    },
+    {
+      $set: info
+    },
+    (err, resu) => {
+      if (err) {
+        res.status(400).send(err)
+      } else {
+        res.json({ message: '修改成功' })
+      }
+    }
+  )
 }
 
 exports.getScore = (req, res) => {
