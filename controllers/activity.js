@@ -1,6 +1,8 @@
-const { body, validationResult } = require('express-validator/check')
+// const { body, validationResult } = require('express-validator/check')
 const ActivityModel = require('../lib/activities')
 const EnrollmentModel = require('../lib/enrollment')
+const ScoreModel = require('../lib/score')
+const StudentModel = require('../lib/students')
 
 // 添加验证
 exports.actCreatePost = [
@@ -125,26 +127,54 @@ exports.putActivityInfo = (req, res) => {
 
 exports.actDelete = (req, res) => {
   const activityId = req.query.activityId
-  ActivityModel.deleteOne(
-    {
-      _id: activityId
-    },
-    (err, resu) => {
-      console.log(resu)
-      if (err) {
-        console.log(err)
-        res.err(err)
-        return
+  function deleteActivity () {
+    return new Promise((resolve, reject) => {
+      ActivityModel.deleteOne(
+        {
+          _id: activityId
+        },
+        (err, resu) => {
+          console.log(resu)
+          if (err) {
+            console.log(err)
+            res.err(err)
+            return
+          }
+          if (resu.ok === 1 && resu.deletedCount === 0) {
+            reject(new Error('没有需要删除的活动'))
+            res.status(400).json({ Error: '没有需要删除的活动' })
+          }
+          if (resu.ok === 1 && resu.deletedCount === 1) {
+            console.log(resu)
+            res.send('删除成功')
+            resolve()
+          }
+        }
+      )
+    })
+  }
+  function deleteEnrollment () {
+    return new Promise((resolve, reject) => {
+      EnrollmentModel.deleteMany({
+        activityId: activityId
+      },
+      (err, resu) => {
+        if (err) {
+          console.log(err)
+          reject(new Error('删除报名表失败'))
+        } else {
+          console.log(resu)
+          resolve()
+        }
       }
-      if (resu.ok === 1 && resu.deletedCount === 0) {
-        res.status(400).send('没有需要删除的活动')
-      }
-      if (resu.ok === 1 && resu.deletedCount === 1) {
-        console.log(resu)
-        res.send('删除成功')
-      }
-    }
-  )
+      )
+    })
+  }
+  deleteActivity()
+    .then(deleteEnrollment)
+    .catch(e => {
+      console.log(e)
+    })
 }
 
 exports.getEnroAct = (req, res) => {
@@ -259,8 +289,66 @@ exports.complete = (req, res) => {
     })
   }
 
+  let module = ''
+  function findAct () {
+    return new Promise((resolve, reject) => {
+      ActivityModel.findOne({
+        _id: activityId
+      },
+      'module',
+      (err, resu) => {
+        if (err) {
+          console.log(err)
+        } else {
+          console.log(resu)
+          module = resu.module
+        }
+      }
+      )
+    })
+  }
+
+  function setScore () {
+    ScoreModel.find({
+      activityId: activityId
+    },
+    null,
+    (err, resu) => {
+      if (err) {
+        console.log(err)
+      } else {
+        console.log(resu)
+        resu.forEach(item => {
+          const set = { $inc: {} }
+          set.$inc[module] = item.score
+          console.log(set)
+          StudentModel.updateOne({
+            _id: item.studentInfo
+          },
+          set,
+          (err, resu) => {
+            if (err) {
+              console.log(err)
+            } else {
+              console.log(resu)
+            }
+          }
+          )
+        })
+      }
+    }
+    )
+  }
+
+  findAct()
+    .then(setScore)
+    .catch(e => {
+      console.log(e)
+    })
+
   findEnro()
     .then(setComplete)
+    .then(setScore)
     .catch(err => {
       console.log(err)
     })
