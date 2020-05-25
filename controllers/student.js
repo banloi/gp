@@ -1,28 +1,45 @@
 const StudentModel = require('../lib/students')
+const multer = require('multer')
+const xlsx = require('xlsx')
+
+// const upload = multer({ storage: multer.memoryStorage() })
 
 exports.createStudent = (req, res) => {
   console.log(req.body)
-  StudentModel.create(
-    req.body,
+  const list = []
+  for (const key in req.body) {
+    const element = req.body[key]
+    list.push(element)
+  }
+  console.log(list)
+  StudentModel.insertMany(
+    list,
+    {
+      ordered: false
+    },
     function (err, student) {
       if (err) {
+        console.log(err)
+        console.log(err.result)
         if (err.message.match('duplicate key')) {
-          req.flash('error', '用户名已被占用')
-          return res.redirect('/signup')
+          console.log(err.message)
         }
-        next(err)
       }
-      res
-        .send(student)
+      console.log('haha', student)
+      res.json(student)
     })
 }
 
 exports.findStudent = (req, res) => {
-  const query = req.body
-  // console.log(req)
+  const query = req.query
   console.log(query)
+  const item = {}
+  if (query['0']) {
+    item._id = query['0']
+    console.log(query)
+  }
   StudentModel.find(
-    query,
+    item,
     null,
     function (err, resu) {
       if (err) {
@@ -38,10 +55,10 @@ exports.findStudent = (req, res) => {
 }
 
 exports.modifyStudent = (req, res) => {
-  const query = req.body
-  console.log(req.params)
+  const { _id, ...info } = req.body
+  console.log(req.body)
   StudentModel.updateOne(
-    req.params, query,
+    { _id: _id }, info,
     { new: true },
     function (err, docs) {
       if (err) {
@@ -54,20 +71,55 @@ exports.modifyStudent = (req, res) => {
         return
       }
       if (docs.n === 0) {
-        res.send('未查询到该学生信息')
+        res.status(400).json({ Error: '未查询到该学生信息' })
       }
       if (docs.n === 1 && docs.nModified === 1) {
-        res.send('修改完成')
+        res.json({ message: '修改完成' })
       }
       if (docs.n === 1 && docs.nModified === 0) {
-        res.send('未修改，请检查提交的修改内容后重试')
+        res.status(400).json({ Error: '未修改，请检查提交的修改内容后重试' })
       }
       console.log(docs)
     })
 }
+
+exports.deleteStudent = (req, res) => {
+  const _id = req.query._id
+  StudentModel.deleteOne(
+    { _id: _id },
+    (err, resu) => {
+      if (err) {
+        console.log(err)
+        res.status(400).json({ Error: '删除失败' })
+      } else {
+        console.log(resu)
+        res.json({ message: '删除完成' })
+      }
+    }
+  )
+}
+
 const path = require('path')
 exports.god = (req, res) => {
   res
     .cookie('rememberme', '1', { expires: new Date(Date.now() + 900000), httpOnly: true })
     .sendFile(path.join(__dirname, '../views/1.html'))
+}
+
+exports.getFile = (req, res) => {
+  console.log(req.files)
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ Error: '请选择文件上传' })
+  }
+
+  const { originalname, buffer } = req.files[0]
+  if (!originalname.endsWith('xls') && !originalname.endsWith('xlsx')) {
+    return res.status(400).json({ Error: '请上传xls或xlsx格式的文件' })
+  }
+  // 解析excel文件
+  const workbook = xlsx.read(buffer, { type: 'buffer' })
+  const sheet = workbook.Sheets[workbook.SheetNames[0]] // 选择第一个工作簿
+  const result = xlsx.utils.sheet_to_json(sheet)
+
+  return res.json(result)
 }
