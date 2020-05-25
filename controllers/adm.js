@@ -118,3 +118,63 @@ exports.admRegister = (req, res) => {
     })
     .catch(e => console.log(e))
 }
+
+exports.putPassword = (req, res) => {
+  console.log(req.jwtInfo)
+  let id = ''
+  function findAdm () {
+    return new Promise((resolve, reject) => {
+      AdmModel.findOne({
+        name: req.jwtInfo.name
+      },
+      null,
+      (err, resu) => {
+        if (err) {
+          console.log(err)
+          reject(err)
+        } else {
+          console.log(resu)
+          id = resu._id
+          if (resu.password !== req.body.oldPassword) {
+            reject(new Error('原密码错误'))
+            res.status(400).json({ Error: '原密码错误' })
+          }
+          resolve()
+        }
+      })
+    })
+  }
+  function modify () {
+    return new Promise((resolve, reject) => {
+      AdmModel.updateOne(
+        {
+          _id: id
+        },
+        {
+          $set: {
+            password: req.body.password
+          }
+        },
+        (err, resu) => {
+          if (err) {
+            console.log(err)
+            reject(err)
+            res.status(400).json({ Error: '修改失败' })
+          } else {
+            console.log(resu)
+            resolve()
+            res.json({ message: '修改成功' })
+          }
+        }
+      )
+    })
+  }
+
+  findAdm()
+    .then(modify)
+    .catch(e => {
+      console.log(e)
+    })
+
+  console.log(req.body)
+}
