@@ -1,5 +1,4 @@
 const StudentModel = require('../lib/students')
-const multer = require('multer')
 const xlsx = require('xlsx')
 
 // const upload = multer({ storage: multer.memoryStorage() })
@@ -97,13 +96,6 @@ exports.deleteStudent = (req, res) => {
       }
     }
   )
-}
-
-const path = require('path')
-exports.god = (req, res) => {
-  res
-    .cookie('rememberme', '1', { expires: new Date(Date.now() + 900000), httpOnly: true })
-    .sendFile(path.join(__dirname, '../views/1.html'))
 }
 
 exports.getFile = (req, res) => {
